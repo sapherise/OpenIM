@@ -39,7 +39,7 @@ joinGroupApplication:
     ext: joinGroupApplication ext
 
 memberQuit:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -70,7 +70,7 @@ groupApplicationRejected:
 
 
 groupOwnerTransferred:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -80,7 +80,7 @@ groupOwnerTransferred:
     ext: groupOwnerTransferred ext
 
 memberKicked:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -90,7 +90,7 @@ memberKicked:
     ext: memberKicked ext
 
 memberInvited:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -100,7 +100,7 @@ memberInvited:
     ext: memberInvited ext
 
 memberEnter:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -110,7 +110,7 @@ memberEnter:
     ext: memberEnter ext
 
 groupDismissed:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -120,7 +120,7 @@ groupDismissed:
     ext: groupDismissed ext
 
 groupMuted:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -130,7 +130,7 @@ groupMuted:
     ext: groupMuted ext
 
 groupCancelMuted:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -143,7 +143,7 @@ groupCancelMuted:
 
 
 groupMemberMuted:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -153,7 +153,7 @@ groupMemberMuted:
     ext: groupMemberMuted ext
 
 groupMemberCancelMuted:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -173,7 +173,7 @@ groupMemberInfoSet:
     ext: groupMemberInfoSet ext
 
 groupInfoSetAnnouncement:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -184,7 +184,7 @@ groupInfoSetAnnouncement:
 
 
 groupInfoSetName:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -198,7 +198,7 @@ groupInfoSetName:
 friendApplicationAdded:
   isSendMsg: false
   reliabilityLevel: 1
-  unreadCount: false
+  unreadCount: true
   offlinePush:
     enable: true
     title: Somebody applies to add you as a friend
@@ -206,9 +206,9 @@ friendApplicationAdded:
     ext: Somebody applies to add you as a friend
 
 friendApplicationApproved:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
-  unreadCount: false
+  unreadCount: true
   offlinePush:
     enable: true
     title: Someone applies to add your friend application
@@ -318,7 +318,7 @@ conversationChanged:
     ext: conversation changed
 
 conversationSetPrivate:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:

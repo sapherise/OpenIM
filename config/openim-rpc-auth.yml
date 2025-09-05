@@ -11,11 +11,12 @@ rpc:
 
 prometheus:
   # Enable or disable Prometheus monitoring
-  enable: true
+  enable: false
   # List of ports that Prometheus listens on; these must match the number of rpc.ports to ensure correct monitoring setup
   # It will only take effect when autoSetPorts is set to false.
   ports: [ 12200 ]
 
 tokenPolicy:
   # Token validity period, in days
-  expire: 90
+  # 过期时间
+  expire: 36500

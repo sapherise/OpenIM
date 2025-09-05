@@ -11,7 +11,7 @@ rpc:
 
 prometheus:
   # Enable or disable Prometheus monitoring
-  enable: true
+  enable: false
   # List of ports that Prometheus listens on; these must match the number of rpc.ports to ensure correct monitoring setup
   # It will only take effect when autoSetPorts is set to false.
   ports: [ 12300 ]
@@ -19,7 +19,7 @@ prometheus:
 
 object:
   # Use MinIO as object storage, or set to "cos", "oss", "kodo", "aws", while also configuring the corresponding settings
-  enable: minio
+  enable:
   cos:
     bucketURL: https://temp-1252357374.cos.ap-chengdu.myqcloud.com
     secretID: 

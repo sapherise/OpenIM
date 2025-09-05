@@ -9,7 +9,7 @@ api:
 
 prometheus:
   # Whether to enable prometheus
-  enable: true
+  enable: false
   # autoSetPorts indicates whether to automatically set the ports
   autoSetPorts: true
   # Prometheus listening ports, must match the number of api.ports

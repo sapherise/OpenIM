@@ -11,7 +11,7 @@ rpc:
 
 prometheus:
   # Whether to enable prometheus
-  enable: true
+  enable: false
   # Prometheus listening ports, must be consistent with the number of rpc.ports
   # It will only take effect when autoSetPorts is set to false.
   ports: [ 12320 ]

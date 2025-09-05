@@ -11,10 +11,10 @@ rpc:
 
 prometheus:
   # Enable or disable Prometheus monitoring
-  enable: true
+  enable: false
   # List of ports that Prometheus listens on; these must match the number of rpc.ports to ensure correct monitoring setup
   # It will only take effect when autoSetPorts is set to false.
   ports: [ 12260 ]
 
-
-enableHistoryForNewMembers: true
+# 新入群用户是否可以查看历史消息
+enableHistoryForNewMembers: false

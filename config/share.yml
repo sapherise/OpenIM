@@ -1,4 +1,5 @@
-secret: openIM123
+# 修改密码
+secret: OpenIM-Lawliet522*
 rpcRegisterName:
   user: user
   friend: friend
@@ -12,9 +13,12 @@ rpcRegisterName:
 
 imAdminUserID: [ imAdmin ]
 
-# 1: For Android, iOS, Windows, Mac, and web platforms, only one instance can be online at a time
+# 0: 默认可多设备多端同时登陆；
+# 1: 全端可同时登录但同端只能保持一个设备在线；
+# 4：各个平台类型允许一个设备登录（目前支持Mobile、MiniWeb、Web、PC、Pad五种平台类型）；
+# 5: PC 端可同时在线, 其他端仅允许一个设备登录
 multiLogin:
-  policy: 1
+  policy: 4
   maxNumOneEnd: 30
 
 rpcMaxBodySize:

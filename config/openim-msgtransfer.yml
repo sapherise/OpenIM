@@ -1,6 +1,6 @@
 prometheus:
   # Enable or disable Prometheus monitoring
-  enable: true
+  enable: false
   # autoSetPorts indicates whether to automatically set the ports
   autoSetPorts: true
   # List of ports that Prometheus listens on; each port corresponds to an instance of monitoring. Ensure these are managed accordingly
