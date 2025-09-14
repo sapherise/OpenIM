@@ -192,7 +192,10 @@ func (x *JSSdk) getConversations(ctx context.Context, req *jssdk.GetConversation
 	req.OwnerUserID = mcontext.GetOpUserID(ctx)
 	conversations, err := x.conversationClient.GetConversations(ctx, req.ConversationIDs, req.OwnerUserID)
 	if err != nil {
-		return nil, err
+		return &jssdk.GetConversationsResp{
+			UnreadCount:   0,
+			Conversations: []*jssdk.ConversationMsg{},
+		}, err
 	}
 	if len(conversations) == 0 {
 		return &jssdk.GetConversationsResp{
@@ -205,11 +208,17 @@ func (x *JSSdk) getConversations(ctx context.Context, req *jssdk.GetConversation
 	})
 	maxSeqs, err := x.msgClient.GetMaxSeqs(ctx, req.ConversationIDs)
 	if err != nil {
-		return nil, err
+		return &jssdk.GetConversationsResp{
+			UnreadCount:   0,
+			Conversations: []*jssdk.ConversationMsg{},
+		}, err
 	}
 	readSeqs, err := x.msgClient.GetHasReadSeqs(ctx, req.ConversationIDs, req.OwnerUserID)
 	if err != nil {
-		return nil, err
+		return &jssdk.GetConversationsResp{
+			UnreadCount:   0,
+			Conversations: []*jssdk.ConversationMsg{},
+		}, err
 	}
 	conversationSeqs := make([]*msg.ConversationSeqs, 0, len(conversations))
 	for _, c := range conversations {
@@ -224,7 +233,10 @@ func (x *JSSdk) getConversations(ctx context.Context, req *jssdk.GetConversation
 	if len(conversationSeqs) > 0 {
 		msgs, err = x.msgClient.GetSeqMessage(ctx, req.OwnerUserID, conversationSeqs)
 		if err != nil {
-			return nil, err
+			return &jssdk.GetConversationsResp{
+				UnreadCount:   0,
+				Conversations: []*jssdk.ConversationMsg{},
+			}, err
 		}
 	}
 	x.checkMessagesAndGetLastMessage(ctx, req.OwnerUserID, msgs)
@@ -241,7 +253,10 @@ func (x *JSSdk) getConversations(ctx context.Context, req *jssdk.GetConversation
 
 	}
 	if err := x.fillConversations(ctx, resp); err != nil {
-		return nil, err
+		return &jssdk.GetConversationsResp{
+			UnreadCount:   0,
+			Conversations: []*jssdk.ConversationMsg{},
+		}, err
 	}
 	var unreadCount int64
 	for conversationID, maxSeq := range maxSeqs {
