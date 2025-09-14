@@ -195,7 +195,10 @@ func (x *JSSdk) getConversations(ctx context.Context, req *jssdk.GetConversation
 		return nil, err
 	}
 	if len(conversations) == 0 {
-		return &jssdk.GetConversationsResp{}, nil
+		return &jssdk.GetConversationsResp{
+			UnreadCount:   0,
+			Conversations: []*jssdk.ConversationMsg{},
+		}, nil
 	}
 	req.ConversationIDs = datautil.Slice(conversations, func(c *conversation.Conversation) string {
 		return c.ConversationID
