@@ -157,6 +157,8 @@ func (x *JSSdk) getActiveConversations(ctx context.Context, req *jssdk.GetActive
 		return c.ConversationID
 	})
 	resp := make([]*jssdk.ConversationMsg, 0, len(sortList))
+
+	var unreadCount int64
 	for _, c := range sortList {
 		conv, ok := conversationMap[c.ConversationID]
 		if !ok {
@@ -169,19 +171,17 @@ func (x *JSSdk) getActiveConversations(ctx context.Context, req *jssdk.GetActive
 				MaxSeq:       c.MaxSeq,
 				ReadSeq:      readSeq[c.ConversationID],
 			})
+			var count = c.MaxSeq - readSeq[c.ConversationID]
+			if count > 0 {
+				unreadCount += count
+			}
 		}
 
 	}
 	if err := x.fillConversations(ctx, resp); err != nil {
 		return nil, err
 	}
-	var unreadCount int64
-	for _, c := range activeConversation {
-		count := c.MaxSeq - readSeq[c.ConversationID]
-		if count > 0 {
-			unreadCount += count
-		}
-	}
+
 	return &jssdk.GetActiveConversationsResp{
 		Conversations: resp,
 		UnreadCount:   unreadCount,
