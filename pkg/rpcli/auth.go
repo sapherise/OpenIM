@@ -26,5 +26,9 @@ func (x *AuthClient) InvalidateToken(ctx context.Context, req *auth.InvalidateTo
 }
 
 func (x *AuthClient) ParseToken(ctx context.Context, token string) (*auth.ParseTokenResp, error) {
+	if x == nil || x.AuthClient == nil {
+        return nil, errors.New("auth rpc client not initialized")
+    }
+
 	return x.AuthClient.ParseToken(ctx, &auth.ParseTokenReq{Token: token})
 }

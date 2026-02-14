@@ -469,6 +469,11 @@ func (ws *WsServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if ws.authClient == nil {
+	    httpError(connContext, errors.New("auth service unavailable"))
+	    return
+	}
+
 	// Call the authentication client to parse the Token obtained from the context
 	resp, err := ws.authClient.ParseToken(connContext, connContext.GetToken())
 	if err != nil {
