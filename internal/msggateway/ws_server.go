@@ -2,6 +2,7 @@ package msggateway
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -470,8 +471,8 @@ func (ws *WsServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if ws.authClient == nil {
-	    httpError(connContext, errors.New("auth service unavailable"))
-	    return
+		httpError(connContext, errors.New("auth service unavailable"))
+		return
 	}
 
 	// Call the authentication client to parse the Token obtained from the context
