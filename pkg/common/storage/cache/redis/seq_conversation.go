@@ -20,7 +20,7 @@ func NewSeqConversationCacheRedis(rdb redis.UniversalClient, mgo database.SeqCon
 	return &seqConversationCacheRedis{
 		rdb:              rdb,
 		mgo:              mgo,
-		lockTime:         time.Second * 3,
+		lockTime:         time.Second * 30,
 		dataTime:         time.Hour * 24 * 365,
 		minSeqExpireTime: time.Hour,
 		rocks:            rockscache.NewClient(rdb, *GetRocksCacheOptions()),
@@ -313,7 +313,7 @@ return result
 }
 
 func (s *seqConversationCacheRedis) wait(ctx context.Context) error {
-	timer := time.NewTimer(time.Second / 4)
+	timer := time.NewTimer(time.Millisecond * 500)
 	defer timer.Stop()
 	select {
 	case <-timer.C:
@@ -324,7 +324,7 @@ func (s *seqConversationCacheRedis) wait(ctx context.Context) error {
 }
 
 func (s *seqConversationCacheRedis) setSeqRetry(ctx context.Context, key string, owner int64, currSeq int64, lastSeq int64, mill int64) {
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 20; i++ {
 		state, err := s.setSeq(ctx, key, owner, currSeq, lastSeq, mill)
 		if err != nil {
 			log.ZError(ctx, "set seq cache failed", err, "key", key, "owner", owner, "currSeq", currSeq, "lastSeq", lastSeq, "count", i+1)
@@ -335,14 +335,21 @@ func (s *seqConversationCacheRedis) setSeqRetry(ctx context.Context, key string,
 		}
 		switch state {
 		case 0: // ideal state
+			return
 		case 1:
 			log.ZWarn(ctx, "set seq cache lock not found", nil, "key", key, "owner", owner, "currSeq", currSeq, "lastSeq", lastSeq)
+			return
 		case 2:
-			log.ZWarn(ctx, "set seq cache lock to be held by someone else", nil, "key", key, "owner", owner, "currSeq", currSeq, "lastSeq", lastSeq)
+			// lock held by someone else (our lock expired and was taken over), keep retrying
+			log.ZWarn(ctx, "set seq cache lock to be held by someone else", nil, "key", key, "owner", owner, "currSeq", currSeq, "lastSeq", lastSeq, "count", i+1)
+			if err := s.wait(ctx); err != nil {
+				return
+			}
+			continue
 		default:
 			log.ZError(ctx, "set seq cache lock unknown state", nil, "key", key, "owner", owner, "currSeq", currSeq, "lastSeq", lastSeq)
+			return
 		}
-		return
 	}
 	log.ZError(ctx, "set seq cache retrying still failed", nil, "key", key, "owner", owner, "currSeq", currSeq, "lastSeq", lastSeq)
 }
@@ -371,7 +378,7 @@ func (s *seqConversationCacheRedis) mallocTime(ctx context.Context, conversation
 		return 0, 0, errs.New("size must be greater than 0")
 	}
 	key := s.getSeqMallocKey(conversationID)
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 20; i++ {
 		states, err := s.malloc(ctx, key, size)
 		if err != nil {
 			return 0, 0, err
