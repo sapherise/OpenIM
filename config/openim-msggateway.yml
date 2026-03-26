@@ -25,4 +25,4 @@ longConnSvr:
   # Maximum length of the entire WebSocket message packet
   websocketMaxMsgLen: 4096
   # WebSocket connection handshake timeout in seconds
-  websocketTimeout: 10
+  websocketTimeout: 60
