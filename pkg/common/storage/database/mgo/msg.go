@@ -915,20 +915,11 @@ func (m *MsgMgo) GetRandBeforeMsg(ctx context.Context, ts int64, limit int) ([]*
 	return mongoutil.Aggregate[*model.MsgDocModel](ctx, m.coll, []bson.M{
 		{
 			"$match": bson.M{
-				"$expr": bson.M{
-					"$and": bson.A{
-						bson.M{
-							"$gt": bson.A{
-								bson.M{"$size": "$msgs"},
-								0,
-							},
-						},
-						bson.M{
-							"$lte": bson.A{
-								bson.M{
-									"$arrayElemAt": bson.A{"$msgs.msg.send_time", -1},
-								},
-								ts,
+				"msgs": bson.M{
+					"$not": bson.M{
+						"$elemMatch": bson.M{
+							"msg.send_time": bson.M{
+								"$gt": ts,
 							},
 						},
 					},
