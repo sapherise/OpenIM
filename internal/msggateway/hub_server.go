@@ -152,6 +152,7 @@ func (s *Server) pushToUser(ctx context.Context, userID string, msgData *sdkws.M
 			err := client.PushMessage(ctx, msgData)
 			if err != nil {
 				log.ZWarn(ctx, "online push msg failed", err, "userID", userID, "platformID", client.PlatformID)
+				client.close()
 				userPlatform.ResultCode = int64(servererrs.ErrPushMsgErr.Code())
 			} else {
 				if _, ok := s.pushTerminal[client.PlatformID]; ok {

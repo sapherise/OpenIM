@@ -294,6 +294,7 @@ func (c *Client) replyMessage(ctx context.Context, binaryReq *Req, err error, re
 	err = c.writeBinaryMsg(mReply)
 	if err != nil {
 		log.ZWarn(ctx, "wireBinaryMsg replyMessage", err, "resp", mReply.String())
+		return err
 	}
 	log.ZDebug(ctx, "wireBinaryMsg end", "time cost", time.Since(t))
 
