@@ -183,6 +183,7 @@ func (g *groupServer) BatchGetIncrementalGroupMember(ctx context.Context, req *p
 		if err != nil {
 			// The client's local group list can lag behind membership changes.
 			if errs.ErrNoPermission.Is(err) {
+				resp[memberReq.GroupID] = &pbgroup.GetIncrementalGroupMemberResp{}
 				continue
 			}
 			return nil, err
