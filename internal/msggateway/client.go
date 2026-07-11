@@ -22,6 +22,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/openimsdk/open-im-server/v3/pkg/msgprocessor"
@@ -40,6 +41,14 @@ var (
 	ErrClientClosed              = errs.New("client actively close the connection")
 	ErrPanic                     = errs.New("panic error")
 )
+
+func isExpectedReadError(err error) bool {
+	if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
+		return true
+	}
+	timeoutErr, ok := err.(interface{ Timeout() bool })
+	return ok && timeoutErr.Timeout()
+}
 
 const (
 	// MessageText is for UTF-8 encoded text messages like JSON.
@@ -146,7 +155,9 @@ func (c *Client) readMessage() {
 		log.ZDebug(c.ctx, "readMessage")
 		messageType, message, returnErr := c.conn.ReadMessage()
 		if returnErr != nil {
-			log.ZWarn(c.ctx, "readMessage", returnErr, "messageType", messageType)
+			if !c.closed.Load() && !isExpectedReadError(returnErr) {
+				log.ZWarn(c.ctx, "readMessage", returnErr, "messageType", messageType)
+			}
 			c.closedErr = returnErr
 			return
 		}

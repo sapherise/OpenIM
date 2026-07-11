@@ -400,7 +400,6 @@ func (db *commonMsgDatabase) GetMsgBySeqsRange(ctx context.Context, userID strin
 	}
 	// "minSeq" represents the startSeq value that the user can retrieve.
 	if minSeq > end {
-		log.ZWarn(ctx, "minSeq > end", errs.New("minSeq>end"), "minSeq", minSeq, "end", end)
 		return 0, 0, nil, nil
 	}
 	maxSeq, err := db.seqConversation.GetMaxSeq(ctx, conversationID)
