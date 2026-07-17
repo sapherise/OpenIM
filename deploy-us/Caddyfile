@@ -1,5 +1,5 @@
 # 美服 OpenIM 反代 —— 规则照国服 nginx 翻译，改用 Caddy 自动证书
-# 部署前把 im-us.lumiscape.xxx 换成真实域名，DNS 指向本 VM，安全组放通 80/443
+# 域名 ilumiscape.heijing.space：DNS A 记录指向美服 VM，安全组放通 80/443
 #
 # 关键：handle_path 会剥掉匹配的前缀，等价于国服 nginx 的 `proxy_pass http://upstream/;`（尾斜杠去前缀）
 #   /api/xxx        → localhost:10002/xxx     （DLServer imserver.host=.../api 走这条）
@@ -7,9 +7,9 @@
 #   /chat/xxx       → localhost:10008/xxx     （OpenIM_Chat 登录注册）
 #   /complete_admin → localhost:10009/        （运营后台 admin-api，默认注释关闭，见下方说明）
 
-im-us.lumiscape.xxx {
-	# 自动签发/续期 Let's Encrypt 证书（替换为真实邮箱）
-	tls admin@lumiscape.xxx
+ilumiscape.heijing.space {
+	# Caddy 自动签发/续期 Let's Encrypt 证书（ACME HTTP-01），与 DLServer 美服（Caddyfile-us）一致不配邮箱。
+	# 代价：放弃 ZeroSSL 备用 CA 和 CA 吊销事件通知；要加回来在此写一行 tls <邮箱> 即可。
 
 	request_body {
 		max_size 100MB

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 【在美服生产机上跑】—— mongodump 备份 openim_v3 到 ${MONGO_BACKUP_DIR}/<时间戳>/，保留最近 KEEP 份。
 # 备份目录已由 compose 挂进 mongo 容器（/data/backup），dump 在容器内执行、产物落宿主。
-# cron 示例（每天美西 4 点，crontab -e）：
+# cron 示例（每天美东 4 点，crontab -e）：
 #   0 4 * * * cd /dl/deploy-us && bash backup-mongo.sh >> /var/log/openim-backup.log 2>&1
 set -euo pipefail
 cd "$(dirname "$0")"

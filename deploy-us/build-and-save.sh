@@ -42,4 +42,4 @@ echo "  openim-config/ chat-config/ 已就绪"
 
 green "完成。把整个 deploy-us/（含 $(basename "$OUT")）scp 到美服，例如："
 echo "  rsync -avz '$DEPLOY_DIR/' <美服>:/dl/deploy-us/"
-echo "  然后在美服：cd /dl/deploy-us && 编辑 .env 密码 → bash patch-config.sh → bash deploy.sh"
+echo "  然后在美服：cd /dl/deploy-us && bash patch-config.sh && bash deploy.sh（.env 已预填密码/secret，零手工输入）"

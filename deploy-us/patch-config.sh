@@ -4,11 +4,18 @@
 # config 经 compose 的 volume 挂进容器；改完 docker compose restart 即生效、无需动镜像。幂等。
 set -euo pipefail
 
-# ── 密码/secret：和 deploy-us/.env、DLServer application-us.yml 对齐 ──
-MONGO_OPENIM_PASSWORD="${MONGO_OPENIM_PASSWORD:-CHANGE_ME_mongo_openim}"
-REDIS_PASSWORD="${REDIS_PASSWORD:-CHANGE_ME_redis}"
-# OpenIM secret：必须同时 == DLServer imserver.secret == Chat share.yml 的 openIM.secret
-OPENIM_SECRET="${OPENIM_SECRET:-CHANGE_ME_openim_secret}"
+DEPLOY_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# ── 密码/secret：默认读同目录 .env（与 compose 同源，天然一致）；显式 export 可覆盖 ──
+if [ -f "$DEPLOY_DIR/.env" ]; then
+  _env_mongo="$(grep -m1 '^MONGO_OPENIM_PASSWORD=' "$DEPLOY_DIR/.env" | cut -d= -f2-)"
+  _env_redis="$(grep -m1 '^REDIS_PASSWORD=' "$DEPLOY_DIR/.env" | cut -d= -f2-)"
+  _env_secret="$(grep -m1 '^OPENIM_SECRET=' "$DEPLOY_DIR/.env" | cut -d= -f2-)"
+fi
+MONGO_OPENIM_PASSWORD="${MONGO_OPENIM_PASSWORD:-${_env_mongo:-CHANGE_ME_mongo_openim}}"
+REDIS_PASSWORD="${REDIS_PASSWORD:-${_env_redis:-CHANGE_ME_redis}}"
+# secret 必须同时 == DLServer imserver.secret == Chat share.yml 的 openIM.secret
+OPENIM_SECRET="${OPENIM_SECRET:-${_env_secret:-CHANGE_ME_openim_secret}}"
 
 # ── 容器网络服务名（= compose service 名 : 容器内部端口）。一般不用改 ──
 MONGO_ADDR="${MONGO_ADDR:-mongo:27017}"
@@ -18,7 +25,6 @@ ETCD_ADDR="${ETCD_ADDR:-etcd:2379}"
 OPENIM_API_URL="${OPENIM_API_URL:-http://openim-server:10002}"   # Chat 调 OpenIM api 的地址
 
 # ── config 目录（部署包内，build-and-save.sh 打包而来）──
-DEPLOY_DIR="$(cd "$(dirname "$0")" && pwd)"
 OPENIM_CONFIG="${OPENIM_CONFIG_DIR:-$DEPLOY_DIR/openim-config}"
 CHAT_CONFIG="${CHAT_CONFIG_DIR:-$DEPLOY_DIR/chat-config}"
 

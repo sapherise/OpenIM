@@ -18,7 +18,7 @@
 
 | 组件 | 部署 | 说明 |
 |---|---|---|
-| mongo / redis / kafka / etcd | docker（生产机 pull 公共镜像） | 端口**绑 127.0.0.1**、TZ 美西、换默认密码 |
+| mongo / redis / kafka / etcd | docker（生产机 pull 公共镜像） | 端口**绑 127.0.0.1**、TZ 美东、换默认密码 |
 | OpenIM server（12 服务） | docker 单容器（**预置镜像**，build 机构建） | api/msggateway/msgtransfer/push/crontask + 7 rpc；`restart:always` + autoheal |
 | OpenIM_Chat（chat + admin 后台） | docker 单容器（预置镜像） | 运营后台 |
 | autoheal | docker | healthcheck unhealthy 时自动重启容器 |
@@ -27,7 +27,7 @@
 
 ## VM 规格（生产机）
 
-- **4 核 / 8G / ≥100G SSD，美西（amd64）**——几百在线的新区轻载配置。
+- **4 核 / 8G / ≥100G SSD，amd64，机房与 DLServer 美服 VM 同区**（腾讯云硅谷/美西，43.130.111.133 所在区，保证 DLServer↔IM 低延迟）——几百在线的新区轻载配置。容器时区统一 `America/New_York`（业务口径，与机房地域无关）。
   - 全 docker 内存硬顶：basics ≈ 3.9g（mongo 1.5g/cache 0.4、redis 1g、kafka 1g/heap 448m、etcd 320m）**+ server 1.5g + chat 640m ≈ 6.1g**，留 ~2g。轻载实际远低于硬顶。
   - **必须配 ≥4G swap 兜底**（防峰值 OOM 杀 mongo/kafka）。生产机不 build，无编译内存压力，比本地 build 形态更宽裕。
   - 在线涨到上千 / 数据变大再扩 16G，把 compose 的 mem_limit 调回。
@@ -56,7 +56,7 @@ rsync -avz deploy-us/ <美服>:/dl/deploy-us/
 
 ```bash
 # 1) 系统准备
-sudo timedatectl set-timezone America/Los_Angeles
+sudo timedatectl set-timezone America/New_York
 #    装 docker（不用 Go/mage）；开机自启 → 容器 restart:always 随之拉起（取代 systemd unit）
 sudo systemctl enable --now docker
 #    ★ 8G 机必配 swap 兜底
@@ -67,11 +67,12 @@ echo 'vm.swappiness=10' | sudo tee /etc/sysctl.d/99-swappiness.conf && sudo sysc
 
 # 2) 部署包已在 /dl/deploy-us（上面 rsync 过来的），进目录
 cd /dl/deploy-us
-cp .env.example .env
-# ★ 编辑 .env：MONGO_ROOT_PASSWORD / MONGO_OPENIM_PASSWORD / REDIS_PASSWORD 改强密码；DATA_DIR 默认 /dl/openim-data
+# .env 已随部署包带来、密码已填好（对齐国服，2026-07 决策）；cat .env 确认即可。
+# ★ 唯一注意：MONGO_ROOT_PASSWORD 取的是国服 compose 的【初始值】openIM123——若国服机器上 root 密码
+#   后来手动改过，先在这里同步（必须在首次 deploy 前改，mongo 只在空数据目录时初始化用户）。
 
 # 3) patch config（改 openim-config/ chat-config/ 的密码+容器地址）
-export MONGO_OPENIM_PASSWORD='...' REDIS_PASSWORD='...' OPENIM_SECRET='...'   # 与 .env 一致
+#    密码和 secret 全部自动读 .env（已预置定值），直接跑即可
 bash patch-config.sh
 
 # 4) load 镜像 + 起全部服务（basics 首次 pull 公共镜像）
@@ -84,7 +85,7 @@ bash deploy.sh
 ### C. 反代 + 证书（Caddy，生产机）
 ```bash
 # 装 Caddy（https://caddyserver.com/docs/install）
-# ★ 编辑 Caddyfile：im-us.lumiscape.xxx → 真实域名；tls 邮箱换成你的；DNS A 记录指向本 VM，放通 80/443
+# ★ Caddyfile 已填好域名 ilumiscape.heijing.space（与 DLServer 美服一致不配 tls 邮箱）——只需确认 DNS A 记录已指向本 VM、安全组放通 80/443
 sudo cp /dl/deploy-us/Caddyfile /etc/caddy/Caddyfile && sudo systemctl restart caddy
 ```
 Caddy 反代宿主 `127.0.0.1` 的 10001/10002/10008，自动签发/续期 Let's Encrypt。
@@ -94,15 +95,15 @@ Caddy 反代宿主 `127.0.0.1` 的 10001/10002/10008，自动签发/续期 Let's
 ### D. 接入 DLServer
 - **AI Bot：美服暂不开启**。DLServer 并没有启动时注册 bot 的逻辑（国服 botid=10 是历史手工注册的），美服空库里没有该用户，直接开会导致 AI 回复发送失败。后续要开时先手工注册一次（botid/botname 与 `application-us.yml` 的 `AIBot` 配置一致）：
   ```bash
-  curl -X POST https://im-us.lumiscape.xxx/api/user/user_register \
+  curl -X POST https://ilumiscape.heijing.space/api/user/user_register \
     -H 'operationID: reg-ai-bot' -H 'token: <美服 imAdmin token>' \
     -d '{"users":[{"userID":"10","nickname":"AI 生成内容仅供参考"}]}'
   ```
 - DLServer `application-us.yml` 的 `imserver`：
   ```yaml
   imserver:
-    host: https://im-us.lumiscape.xxx/api    # 指向美服 IM
-    secret: <patch-config 用的 OPENIM_SECRET>
+    host: https://ilumiscape.heijing.space/api    # 指向美服 IM
+    secret: OpenIM-Lawliet522*US                  # 美服专属 secret（.env 的 OPENIM_SECRET 同值）
     admin: imAdmin
     token: <用美服新实例 imAdmin 重新签发的 admin token>   # 国服 token 对新实例无效
   ```
@@ -128,8 +129,8 @@ Caddy 反代宿主 `127.0.0.1` 的 10001/10002/10008，自动签发/续期 Let's
 
 ## 验证清单
 
-1. `curl https://im-us.lumiscape.xxx/api/` → 连通（TLS 生效）
-2. 客户端登录 → DLServer `LoginIM` 拿 token → WS `wss://im-us.../msg_gateway` 连上
+1. `curl https://ilumiscape.heijing.space/api/` → 连通（TLS 生效）
+2. 客户端登录 → DLServer `LoginIM` 拿 token → WS `wss://ilumiscape.heijing.space/msg_gateway` 连上
 3. 私信收发、群组建/入/退均正常；运营后台走 SSH 隧道 `http://127.0.0.1:10009` 可登录（AI Bot 美服暂不开启，见 D 步骤）
 4. （启用 FCM 后）杀掉 App 进程发消息 → 手机收到系统推送
 

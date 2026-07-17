@@ -62,4 +62,4 @@ for p in 10002 10001 10008; do
   code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "http://127.0.0.1:$p/" 2>/dev/null || echo 000)
   [ "$code" != "000" ] && green "  port $p 有响应(HTTP $code)" || echo "  ⚠️ port $p 无响应（还在启动？看 docker logs）"
 done
-green "完成。外部验证：curl https://im-us.lumiscape.xxx/api/"
+green "完成。外部验证：curl https://ilumiscape.heijing.space/api/"
