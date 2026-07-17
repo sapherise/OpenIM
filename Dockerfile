@@ -1,5 +1,10 @@
-# Use Go 1.22 Alpine as the base image for building the application
-FROM golang:1.22-alpine AS builder
+# Build stage runs natively on the build machine (BUILDPLATFORM) and lets Go
+# cross-compile for the target platform — heavy steps (mod download / compile)
+# never go through QEMU when building cross-arch (e.g. arm64 Mac → amd64).
+FROM --platform=$BUILDPLATFORM golang:1.22-alpine AS builder
+
+ARG TARGETOS
+ARG TARGETARCH
 
 # Define the base directory for the application as an environment variable
 ENV SERVER_DIR=/openim-server
@@ -15,11 +20,22 @@ COPY . .
 
 RUN go mod download
 
-# Install Mage to use for building the application
-RUN go install github.com/magefile/mage@v1.15.0
+# Mage is needed twice: a native binary to run `mage build` in this stage, and a
+# target-arch binary shipped into the runtime image (cross `go install` drops it
+# under /go/bin/${GOOS}_${GOARCH}/; when build==target it stays in /go/bin).
+RUN go install github.com/magefile/mage@v1.15.0 && \
+    GOOS=$TARGETOS GOARCH=$TARGETARCH go install github.com/magefile/mage@v1.15.0 && \
+    mkdir -p /out && \
+    if [ -f "/go/bin/${TARGETOS}_${TARGETARCH}/mage" ]; then \
+      cp "/go/bin/${TARGETOS}_${TARGETARCH}/mage" /out/mage; \
+    else \
+      cp /go/bin/mage /out/mage; \
+    fi
 
-# Optionally build your application if needed
-RUN mage build
+# Cross-compile all binaries for the target platform (gomake reads PLATFORMS and
+# emits to _output/bin/platforms/${TARGETOS}/${TARGETARCH}/, which is exactly
+# where `mage start` looks at runtime via runtime.GOOS/GOARCH)
+RUN PLATFORMS="${TARGETOS}_${TARGETARCH}" mage build
 
 # Using Alpine Linux with Go environment for the final image
 FROM golang:1.22-alpine
@@ -32,10 +48,10 @@ ENV SERVER_DIR=/openim-server
 WORKDIR $SERVER_DIR
 
 
-# Copy the compiled binaries and mage from the builder image to the final image
+# Copy the compiled binaries and mage (target-arch build) from the builder image
 COPY --from=builder $SERVER_DIR/_output $SERVER_DIR/_output
 COPY --from=builder $SERVER_DIR/config $SERVER_DIR/config
-COPY --from=builder /go/bin/mage /usr/local/bin/mage
+COPY --from=builder /out/mage /usr/local/bin/mage
 COPY --from=builder $SERVER_DIR/magefile_windows.go $SERVER_DIR/
 COPY --from=builder $SERVER_DIR/magefile_unix.go $SERVER_DIR/
 COPY --from=builder $SERVER_DIR/magefile.go $SERVER_DIR/

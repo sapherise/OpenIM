@@ -1,0 +1,42 @@
+# 美服 OpenIM 反代 —— 规则照国服 nginx 翻译，改用 Caddy 自动证书
+# 部署前把 im-us.lumiscape.xxx 换成真实域名，DNS 指向本 VM，安全组放通 80/443
+#
+# 关键：handle_path 会剥掉匹配的前缀，等价于国服 nginx 的 `proxy_pass http://upstream/;`（尾斜杠去前缀）
+#   /api/xxx        → localhost:10002/xxx     （DLServer imserver.host=.../api 走这条）
+#   /msg_gateway    → localhost:10001/        （客户端 WebSocket，Caddy 自动处理 Upgrade）
+#   /chat/xxx       → localhost:10008/xxx     （OpenIM_Chat 登录注册）
+#   /complete_admin → localhost:10009/        （运营后台 admin-api，默认注释关闭，见下方说明）
+
+im-us.lumiscape.xxx {
+	# 自动签发/续期 Let's Encrypt 证书（替换为真实邮箱）
+	tls admin@lumiscape.xxx
+
+	request_body {
+		max_size 100MB
+	}
+
+	# WebSocket 长连接网关
+	handle_path /msg_gateway* {
+		reverse_proxy localhost:10001
+	}
+
+	# OpenIM server API（DLServer 走这条）
+	handle_path /api/* {
+		reverse_proxy localhost:10002
+	}
+
+	# OpenIM_Chat 业务 API
+	handle_path /chat/* {
+		reverse_proxy localhost:10008
+	}
+
+	# 运营后台 admin-api —— 默认【不】公网暴露：chatAdmin 是众所周知的默认账号，先改密码。
+	# 需要临时开放时取消下面注释并 systemctl reload caddy；日常建议走 SSH 隧道访问：
+	#   ssh -L 10009:127.0.0.1:10009 <美服>   然后本地访问 http://127.0.0.1:10009
+	# handle_path /complete_admin/* {
+	# 	reverse_proxy localhost:10009
+	# }
+
+	# 其余路径拒绝，避免误暴露内部服务
+	respond 404
+}
