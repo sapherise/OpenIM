@@ -18,8 +18,8 @@ imAdminUserID: [ imAdmin ]
 # 4：各个平台类型允许一个设备登录（目前支持Mobile、MiniWeb、Web、PC、Pad五种平台类型）；
 # 5: PC 端可同时在线, 其他端仅允许一个设备登录
 multiLogin:
-  policy: 4
-  maxNumOneEnd: 30
+  policy: 0
+  maxNumOneEnd: 3
 
 rpcMaxBodySize:
   requestMaxBodySize: 8388608
