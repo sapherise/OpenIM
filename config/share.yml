@@ -19,7 +19,7 @@ imAdminUserID: [ imAdmin ]
 # 5: PC 端可同时在线, 其他端仅允许一个设备登录
 multiLogin:
   policy: 0
-  maxNumOneEnd: 3
+  maxNumOneEnd: 30
 
 rpcMaxBodySize:
   requestMaxBodySize: 8388608
