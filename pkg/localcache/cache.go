@@ -17,6 +17,7 @@ package localcache
 import (
 	"context"
 	"hash/fnv"
+	"sync"
 	"unsafe"
 
 	"github.com/openimsdk/open-im-server/v3/pkg/localcache/link"
@@ -65,18 +66,27 @@ func New[V any](opts ...Option) Cache[V] {
 }
 
 type cache[V any] struct {
-	opt   *option
-	link  link.Link
-	local lru.LRU[string, V]
+	deleteMu sync.Mutex
+	opt      *option
+	link     link.Link
+	local    lru.LRU[string, V]
 }
 
 func (c *cache[V]) onEvict(key string, value V) {
 	if c.link != nil {
-		lks := c.link.Del(key)
-		for k := range lks {
-			if key != k { // prevent deadlock
-				c.local.Del(k)
-			}
+		// The LRU still holds its lock here. Delete linked keys asynchronously
+		// so a key in the same slot cannot re-enter that lock and deadlock.
+		// Del includes key itself, which does not require linked deletion.
+		if lks := c.link.Del(key); len(lks) > 1 {
+			go c.delLinked(key, lks)
+		}
+	}
+}
+
+func (c *cache[V]) delLinked(src string, keys map[string]struct{}) {
+	for k := range keys {
+		if src != k {
+			c.local.Del(k)
 		}
 	}
 }
@@ -85,14 +95,18 @@ func (c *cache[V]) del(key ...string) {
 	if c.local == nil {
 		return
 	}
+	// A second invalidation must wait until the detached links are deleted.
+	c.deleteMu.Lock()
+	defer c.deleteMu.Unlock()
 	for _, k := range key {
-		c.local.Del(k)
+		// Detach links first so onEvict cannot hand this invalidation to a
+		// background goroutine. Explicit deletion must finish before returning.
+		var linked map[string]struct{}
 		if c.link != nil {
-			lks := c.link.Del(k)
-			for k := range lks {
-				c.local.Del(k)
-			}
+			linked = c.link.Del(k)
 		}
+		c.local.Del(k)
+		c.delLinked(k, linked)
 	}
 }
 
