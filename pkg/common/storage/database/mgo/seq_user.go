@@ -42,8 +42,12 @@ func (s *seqUserMongo) setSeq(ctx context.Context, conversationID string, userID
 		"read_seq":        0,
 	}
 	delete(insert, field)
+	operator := "$set"
+	if field == "read_seq" {
+		operator = "$max"
+	}
 	update := map[string]any{
-		"$set": bson.M{
+		operator: bson.M{
 			field: seq,
 		},
 		"$setOnInsert": insert,

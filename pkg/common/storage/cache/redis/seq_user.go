@@ -79,7 +79,16 @@ func (s *seqUserCacheRedis) SetUserReadSeq(ctx context.Context, conversationID s
 		return err
 	}
 	if dbSeq < seq {
-		if err := s.rocks.RawSet(ctx, s.getSeqUserReadSeqKey(conversationID, userID), strconv.Itoa(int(seq)), s.readExpireTime); err != nil {
+
+		if err := s.rdb.Eval(ctx, `
+local current = tonumber(redis.call("HGET", KEYS[1], "value")) or 0
+if current < tonumber(ARGV[1]) then
+ redis.call("HSET", KEYS[1], "value", ARGV[1])
+ redis.call("HDEL", KEYS[1], "lockOwner", "lockUntil")
+ redis.call("EXPIRE", KEYS[1], ARGV[2])
+end
+return 1
+`, []string{s.getSeqUserReadSeqKey(conversationID, userID)}, seq, int64(s.readExpireTime/time.Second)).Err(); err != nil {
 			return errs.Wrap(err)
 		}
 	}

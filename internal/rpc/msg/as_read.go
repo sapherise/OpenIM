@@ -62,8 +62,16 @@ func (m *msgServer) GetConversationsHasReadAndMaxSeq(ctx context.Context, req *m
 	}
 	resp := &msg.GetConversationsHasReadAndMaxSeqResp{Seqs: make(map[string]*msg.Seqs)}
 	for conversationID, maxSeq := range maxSeqs {
+		hasReadSeq := hasReadSeqs[conversationID]
+		if _, bounded := conversationMaxSeqMap[conversationID]; !bounded {
+			if repaired, repairErr := m.MsgDatabase.RepairExpiredReadSeq(ctx, req.UserID, conversationID, hasReadSeq, maxSeq.Seq); repairErr == nil {
+				hasReadSeq = repaired
+			} else {
+				log.ZWarn(ctx, "repair expired read sequence failed", repairErr, "conversationID", conversationID)
+			}
+		}
 		resp.Seqs[conversationID] = &msg.Seqs{
-			HasReadSeq: hasReadSeqs[conversationID],
+			HasReadSeq: hasReadSeq,
 			MaxSeq:     maxSeq.Seq,
 			MaxSeqTime: maxSeq.Time,
 		}
@@ -202,6 +210,10 @@ func (m *msgServer) MarkConversationAsRead(ctx context.Context, req *msg.MarkCon
 }
 
 func (m *msgServer) sendMarkAsReadNotification(ctx context.Context, conversationID string, sessionType int32, sendID, recvID string, seqs []int64, hasReadSeq int64) {
+	// A delayed receipt must not move another device behind a repaired cursor.
+	if current, err := m.MsgDatabase.GetHasReadSeq(ctx, sendID, conversationID); err == nil {
+		hasReadSeq = max(hasReadSeq, current)
+	}
 	tips := &sdkws.MarkAsReadTips{
 		MarkAsReadUserID: sendID,
 		ConversationID:   conversationID,
