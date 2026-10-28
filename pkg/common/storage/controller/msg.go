@@ -388,6 +388,9 @@ func (db *commonMsgDatabase) findMsgInfoBySeq(ctx context.Context, userID, docID
 // "userMinSeq" can be set as the same value as the conversation's "maxSeq" at the moment they join the group.
 // This ensures that their message retrieval starts from the point they joined.
 func (db *commonMsgDatabase) GetMsgBySeqsRange(ctx context.Context, userID string, conversationID string, begin, end, num, userMaxSeq int64) (int64, int64, []*sdkws.MsgData, error) {
+	if end < begin {
+		return 0, 0, nil, errs.ErrArgs.WrapMsg("seq end < begin")
+	}
 	userMinSeq, err := db.seqUser.GetUserMinSeq(ctx, conversationID, userID)
 	if err != nil && !errors.Is(err, redis.Nil) {
 		return 0, 0, nil, err
@@ -423,7 +426,8 @@ func (db *commonMsgDatabase) GetMsgBySeqsRange(ctx context.Context, userID strin
 	}
 	// "begin" and "end" represent the actual startSeq and endSeq values that the user can retrieve.
 	if end < begin {
-		return 0, 0, nil, errs.ErrArgs.WrapMsg("seq end < begin")
+		// Retention and user visibility limits can leave a valid request empty.
+		return minSeq, maxSeq, nil, nil
 	}
 	var seqs []int64
 	if end-begin+1 <= num {
