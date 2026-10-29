@@ -13,6 +13,7 @@ import (
 	"github.com/openimsdk/tools/log"
 	"github.com/redis/go-redis/v9"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -355,8 +356,9 @@ func (s *seqConversationCacheRedis) setSeqRetry(ctx context.Context, key string,
 }
 
 func (s *seqConversationCacheRedis) getMallocSize(conversationID string, size int64) int64 {
-	if size == 0 {
-		return 0
+	// Single-chat cache recovery must not expose unused reserved sequence numbers.
+	if size == 0 || strings.HasPrefix(conversationID, "si_") {
+		return size
 	}
 	var basicSize int64
 	if msgprocessor.IsGroupConversationID(conversationID) {
